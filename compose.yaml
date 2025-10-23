@@ -1,0 +1,55 @@
+services:
+  nginx_service:
+    image: nginx:trixie-perl
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "80:80"
+    networks:
+      - nextcrud_network 
+    depends_on:
+      - mongodb_service
+      - next_node1
+      - next_node2
+
+  next_node1:
+    container_name: next_node1
+    build: 
+      context: .
+    env_file: .env
+    environment:
+      -  MONGODB_URI=${MONGODB_URI}
+      -  NEXT_API_URL=http://nginx_service
+      -  NEXT_PUBLIC_API_BASE_URL=http://nginx_service
+    networks:
+      - nextcrud_network
+    depends_on:
+      - mongodb_service
+
+  next_node2:
+    container_name: next_node2
+    build:
+      context: .
+    env_file: .env
+    networks:
+      - nextcrud_network
+    environment:
+      -  MONGODB_URI=${MONGODB_URI}
+      -  NEXT_API_URL=http://nginx_service
+      -  NEXT_PUBLIC_API_BASE_URL=http://nginx_service
+    depends_on:
+      - mongodb_service
+
+  mongodb_service:
+    container_name: mongodb_service
+    image: mongodb/mongodb-community-server:7.0-ubi8
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - nextcrud_network
+networks:
+  nextcrud_network:
+volumes:
+  mongodb_data:
